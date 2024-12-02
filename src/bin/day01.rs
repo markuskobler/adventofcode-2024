@@ -1,74 +1,78 @@
 use std::collections::{BinaryHeap, HashMap};
 
-use nom::{
-    character::complete::{self, line_ending, space1},
-    combinator::opt,
-    multi::fold_many1,
-    sequence::{separated_pair, terminated},
-    IResult,
-};
+use winnow::ascii::{dec_uint, line_ending, space1};
+use winnow::combinator::{opt, repeat, separated_pair, terminated};
+use winnow::error::ParserError;
+use winnow::prelude::*;
 
-fn parse_line(input: &str) -> IResult<&str, (u32, u32)> {
-    terminated(
-        separated_pair(complete::u32, space1, complete::u32),
-        opt(line_ending),
-    )(input)
+type Stream<'i> = &'i str;
+
+fn parse_line<'i, E>(input: &mut Stream<'i>) -> PResult<(u32, u32), E>
+where
+    E: ParserError<&'i str>,
+{
+    terminated(separated_pair(dec_uint, space1, dec_uint), opt(line_ending)).parse_next(input)
 }
 
-fn parse_part1(input: &str) -> IResult<&str, u32> {
+fn parse_part1<'i, E>(input: &mut Stream<'i>) -> PResult<u32, E>
+where
+    E: ParserError<&'i str>,
+{
     let cap = input.len() / 14;
 
-    let (remaining, (n1, n2)) = fold_many1(
-        parse_line,
-        move || {
-            (
-                BinaryHeap::with_capacity(cap),
-                BinaryHeap::with_capacity(cap),
-            )
-        },
-        |(mut v1, mut v2), (n1, n2)| {
-            v1.push(n1);
-            v2.push(n2);
-            (v1, v2)
-        },
-    )(input)?;
-
-    let total = n1
-        .into_sorted_vec()
-        .into_iter()
-        .zip(n2.into_sorted_vec().into_iter())
-        .fold(0, |total, (n1, n2)| total + n1.abs_diff(n2));
-
-    Ok((remaining, total))
-}
-
-fn parse_part2(input: &str) -> IResult<&str, u32> {
-    let cap = input.len() / 14;
-
-    let (remaining, (left, right)) = fold_many1(
-        parse_line,
-        || (Vec::with_capacity(cap), HashMap::<u32, u32>::new()),
-        |(mut v1, mut v2), (n1, n2)| {
-            v1.push(n1);
-            v2.entry(n2).and_modify(|c| *c += 1).or_insert(1);
-            (v1, v2)
-        },
-    )(input)?;
+    let (left, right) = repeat(1.., parse_line)
+        .fold(
+            move || {
+                (
+                    BinaryHeap::with_capacity(cap),
+                    BinaryHeap::with_capacity(cap),
+                )
+            },
+            |(mut left, mut right), (l, r)| {
+                left.push(l);
+                right.push(r);
+                (left, right)
+            },
+        )
+        .parse_next(input)?;
 
     let total = left
+        .into_sorted_vec()
         .into_iter()
-        .fold(0, |total, n| (right.get(&n).unwrap_or(&0) * n) + total);
+        .zip(right.into_sorted_vec())
+        .fold(0, |total, (n1, n2)| total + n1.abs_diff(n2));
 
-    Ok((remaining, total))
+    Ok(total)
+}
+
+fn parse_part2<'i, E>(input: &mut Stream<'i>) -> PResult<u32, E>
+where
+    E: ParserError<&'i str>,
+{
+    let cap = input.len() / 14;
+
+    let (left, right) = repeat(1.., parse_line)
+        .fold(
+            || (Vec::with_capacity(cap), HashMap::<u32, u32>::new()),
+            |(mut v1, mut v2), (n1, n2)| {
+                v1.push(n1);
+                v2.entry(n2).and_modify(|c| *c += 1).or_insert(1);
+                (v1, v2)
+            },
+        )
+        .parse_next(input)?;
+
+    Ok(left
+        .into_iter()
+        .fold(0, |total, n| (right.get(&n).unwrap_or(&0) * n) + total))
 }
 
 fn main() {
     let input = include_str!("../../data/day01.txt");
 
-    let (_, part1) = parse_part1(input).unwrap();
+    let part1 = parse_part1::<()>.parse(input).unwrap();
     eprintln!("Part 1: {part1}");
 
-    let (_, part2) = parse_part2(input).unwrap();
-
+    let part2 = parse_part2::<()>.parse(input).unwrap();
     eprintln!("Part 2: {part2}");
 }

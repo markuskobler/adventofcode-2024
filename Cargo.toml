@@ -11,4 +11,4 @@ debug = true
 name = "day01"
 
 [dependencies]
-nom = "*"
+winnow = "0.6"
