@@ -1,3 +1,5 @@
+use adventofcode_2024::prelude::*;
+
 use std::collections::HashSet;
 
 use winnow::ascii::{dec_uint, line_ending, newline};
@@ -11,8 +13,6 @@ fn main() {
     let part1 = process_part1::<()>.parse(input).unwrap();
     eprintln!("Part 1: {part1}");
 }
-
-type Stream<'i> = &'i str;
 
 fn process_rules<'i, E: ParserError<Stream<'i>>>(
     input: &mut Stream<'i>,

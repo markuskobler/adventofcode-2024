@@ -1,3 +1,5 @@
+use adventofcode_2024::prelude::*;
+
 use winnow::combinator::{alt, delimited, separated_pair};
 use winnow::prelude::*;
 use winnow::token::one_of;
@@ -12,8 +14,6 @@ fn main() {
     let part2 = process_part2::<()>.parse(input).unwrap();
     eprintln!("Part 2: {part2}");
 }
-
-type Stream<'i> = &'i str;
 
 fn process_part1<'i, E: ParserError<Stream<'i>>>(input: &mut Stream<'i>) -> PResult<u32, E> {
     Ok(std::iter::from_fn(move || {
