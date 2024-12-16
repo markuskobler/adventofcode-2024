@@ -1,11 +1,11 @@
+use adventofcode_2024::prelude::*;
+
 use std::collections::{BinaryHeap, HashMap};
 
 use winnow::ascii::{dec_uint, line_ending, space1};
 use winnow::combinator::{opt, repeat, separated_pair, terminated};
 use winnow::error::ParserError;
 use winnow::prelude::*;
-
-type Stream<'i> = &'i str;
 
 fn parse_line<'i, E>(input: &mut Stream<'i>) -> PResult<(u32, u32), E>
 where

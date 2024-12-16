@@ -1,4 +1,5 @@
 #![feature(iter_map_windows)]
+use adventofcode_2024::prelude::*;
 
 use winnow::prelude::*;
 use winnow::{
@@ -17,8 +18,6 @@ pub fn main() {
     let part2 = process_part2::<()>.parse(input).unwrap();
     eprintln!("Part 2: {part2}");
 }
-
-type Stream<'i> = &'i str;
 
 fn parse_line<'i, E: ParserError<Stream<'i>>>(input: &mut Stream<'i>) -> PResult<Vec<u32>, E> {
     terminated(
